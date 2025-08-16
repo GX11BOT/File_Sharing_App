@@ -1,0 +1,20 @@
+{
+  "name": "file_sharing_app",
+  "version": "1.0.0",
+  "description": "This is a fullstack project from TechTitans",
+  "main": "server.js",
+  "scripts": {
+    "test": "npm run dev"
+  },
+  "keywords": [
+    "Backend"
+  ],
+  "author": "Arnav Naithani",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "mongoose": "^8.17.1"
+  }
+}
