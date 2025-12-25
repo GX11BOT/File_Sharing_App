@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
-import { useParams } from "react-router-dom"
-import { Download, Clock } from "lucide-react"
+import { useParams, useNavigate } from "react-router-dom"
+import { Download, Clock, LogIn, ArrowLeft } from "lucide-react"
+import { useAuth } from "../context/AuthContext"
 
 function getTimeRemaining(expiryTime) {
     const total = new Date(expiryTime) - new Date()
@@ -18,6 +19,8 @@ function getTimeRemaining(expiryTime) {
 
 export default function DownloadComponent() {
     const { fileId } = useParams()
+    const navigate = useNavigate()
+    const { user } = useAuth()
     const [fileInfo, setFileInfo] = useState(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
@@ -63,6 +66,13 @@ export default function DownloadComponent() {
     }, [fileInfo])
 
     const handleDownload = async () => {
+        // Check if user is logged in
+        if (!user) {
+            // Save the current URL to return after login
+            navigate("/login", { state: { returnTo: `/download/${fileId}` } })
+            return
+        }
+
         try {
             const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000"
             const response = await fetch(`${apiUrl}/api/file/download/${fileId}`)
@@ -146,8 +156,19 @@ export default function DownloadComponent() {
                             disabled={timeLeft.expired}
                             className="flex items-center justify-center w-full bg-blue-500 text-white p-3 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
                         >
-                            <Download className="w-5 h-5 mr-2" />
-                            {timeLeft.expired ? "File Expired" : "Download Now"}
+                            {!user ? (
+                                <>
+                                    <LogIn className="w-5 h-5 mr-2" />
+                                    Login to Download
+                                </>
+                            ) : timeLeft.expired ? (
+                                "File Expired"
+                            ) : (
+                                <>
+                                    <Download className="w-5 h-5 mr-2" />
+                                    Download Now
+                                </>
+                            )}
                         </button>
 
                         {fileInfo.download_count > 0 && (

@@ -52,7 +52,7 @@ exports.uploadFile = async (req, res) => {
         }
 
         const fileDoc = await File.create(fileData)
-        const downloadLink = `${process.env.BASE_URL}/api/file/download/${fileUuid}`
+        const downloadLink = `${process.env.FRONTEND_BASE_URL || process.env.BASE_URL}/download/${fileUuid}`
 
         if (receiver_email) {
             await transporter.sendMail({

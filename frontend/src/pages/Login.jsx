@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import { UserPlus, LogIn, Loader2 } from "lucide-react"
 
@@ -14,7 +14,11 @@ export default function Login() {
     const [error, setError] = useState("")
     const [loading, setLoading] = useState(false)
     const navigate = useNavigate()
+    const location = useLocation()
     const { login, register } = useAuth()
+    
+    // Get the page to return to after login
+    const returnTo = location.state?.returnTo || "/"
 
     const validatePassword = (password) => {
         const requirements = {
@@ -61,7 +65,7 @@ export default function Login() {
                 }
                 await login(credentials.emailId, credentials.password)
             }
-            navigate("/")
+            navigate(returnTo)
         } catch (error) {
             setError(error.message)
         } finally {

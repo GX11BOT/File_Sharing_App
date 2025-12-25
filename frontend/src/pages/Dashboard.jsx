@@ -8,6 +8,9 @@ import {
     Upload,
     Download,
     Clock,
+    Copy,
+    Check,
+    Mail,
 } from "lucide-react"
 import { Link } from "react-router-dom"
 
@@ -36,6 +39,11 @@ export default function Dashboard() {
     const [files, setFiles] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
+    const [copied, setCopied] = useState({})
+    const [sharing, setSharing] = useState({})
+    const [emailSent, setEmailSent] = useState({})
+    const [showEmailModal, setShowEmailModal] = useState({})
+    const [emailInput, setEmailInput] = useState({})
     const { authHeader } = useAuth()
 
     const fetchFiles = useCallback(async () => {
@@ -79,6 +87,55 @@ export default function Dashboard() {
             setFiles(files.filter((file) => file.id !== fileId))
         } catch (err) {
             setError(err.message)
+        }
+    }
+
+    const handleCopyLink = async (fileId) => {
+        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000"
+        const downloadLink = `${apiUrl}/download/${fileId}`
+        
+        try {
+            await navigator.clipboard.writeText(downloadLink)
+            setCopied({ ...copied, [fileId]: true })
+            setTimeout(() => setCopied({ ...copied, [fileId]: false }), 2000)
+        } catch {
+            setError("Failed to copy link")
+        }
+    }
+
+    const handleSendEmail = async (fileId, file) => {
+        const email = emailInput[fileId]
+        if (!email) return
+
+        try {
+            setSharing({ ...sharing, [fileId]: true })
+            const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000"
+            const downloadLink = `${apiUrl}/download/${fileId}`
+
+            const response = await fetch(`${apiUrl}/api/file/send-email`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email,
+                    downloadLink,
+                    fileName: file.filename,
+                    expiryTime: file.expiry_time,
+                }),
+            })
+
+            if (!response.ok) {
+                const data = await response.json()
+                throw new Error(data.message || "Failed to send email")
+            }
+
+            setEmailSent({ ...emailSent, [fileId]: true })
+            setEmailInput({ ...emailInput, [fileId]: "" })
+            setShowEmailModal({ ...showEmailModal, [fileId]: false })
+            setTimeout(() => setEmailSent({ ...emailSent, [fileId]: false }), 3000)
+        } catch (err) {
+            setError(err.message)
+        } finally {
+            setSharing({ ...sharing, [fileId]: false })
         }
     }
 
@@ -176,7 +233,36 @@ export default function Dashboard() {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <button
+                                            onClick={() =>
+                                                handleCopyLink(file.id)
+                                            }
+                                            className={`p-3 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg ${
+                                                copied[file.id]
+                                                    ? "bg-green-500 text-white"
+                                                    : "text-blue-600 bg-blue-50 hover:bg-blue-100"
+                                            }`}
+                                            title="Copy download link"
+                                        >
+                                            {copied[file.id] ? (
+                                                <Check className="w-5 h-5" />
+                                            ) : (
+                                                <Copy className="w-5 h-5" />
+                                            )}
+                                        </button>
+                                        <button
+                                            onClick={() =>
+                                                setShowEmailModal({
+                                                    ...showEmailModal,
+                                                    [file.id]: true,
+                                                })
+                                            }
+                                            className="p-3 text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg"
+                                            title="Share via email"
+                                        >
+                                            <Mail className="w-5 h-5" />
+                                        </button>
                                         <Link
                                             to={`/download/${file.id}`}
                                             className="p-3 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg"
@@ -195,6 +281,100 @@ export default function Dashboard() {
                                         </button>
                                     </div>
                                 </div>
+
+                                {/* Email Modal */}
+                                {showEmailModal[file.id] && (
+                                    <div className="fixed top-36 inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                                        <div className="max-w-6xl mx-auto w-full">
+                                            <div className="bg-white rounded-2xl p-8 shadow-xl">
+                                                <h3 className="text-xl font-semibold mb-6 text-gray-800">
+                                                    Share File via Email
+                                                </h3>
+                                                <div className="mb-4 text-sm text-gray-600">
+                                                    <p className="font-medium mb-2">File: <span className="text-gray-800 font-semibold">{file.filename}</span></p>
+                                                </div>
+                                                <input
+                                                    type="email"
+                                                    placeholder="Enter recipient's email address"
+                                                    value={emailInput[file.id] || ""}
+                                                    onChange={(e) =>
+                                                        setEmailInput({
+                                                            ...emailInput,
+                                                            [file.id]:
+                                                                e.target.value,
+                                                        })
+                                                    }
+                                                    className="w-full p-4 border border-gray-300 rounded-lg mb-6 focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg"
+                                                />
+                                                <div className="flex gap-3">
+                                                    <button
+                                                        onClick={() =>
+                                                            setShowEmailModal({
+                                                                ...showEmailModal,
+                                                                [file.id]: false,
+                                                            })
+                                                        }
+                                                        className="flex-1 p-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-all text-lg"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                    <button
+                                                        onClick={() =>
+                                                            handleSendEmail(
+                                                                file.id,
+                                                                file
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            sharing[file.id] ||
+                                                            !emailInput[file.id]
+                                                        }
+                                                        className={`flex-1 p-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2 text-lg ${
+                                                            emailSent[file.id]
+                                                                ? "bg-green-500 text-white"
+                                                                : "bg-orange-500 text-white hover:bg-orange-600 disabled:bg-gray-400"
+                                                        }`}
+                                                    >
+                                                        {sharing[file.id] ? (
+                                                            <>
+                                                                <svg
+                                                                    className="animate-spin h-5 w-5"
+                                                                    viewBox="0 0 24 24"
+                                                                >
+                                                                    <circle
+                                                                        className="opacity-25"
+                                                                        cx="12"
+                                                                        cy="12"
+                                                                        r="10"
+                                                                        stroke="currentColor"
+                                                                        strokeWidth="4"
+                                                                        fill="none"
+                                                                    ></circle>
+                                                                    <path
+                                                                        className="opacity-75"
+                                                                        fill="currentColor"
+                                                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                                    ></path>
+                                                                </svg>
+                                                                Sending
+                                                            </>
+                                                        ) : emailSent[file.id] ? (
+                                                            <>
+                                                                <Check className="w-5 h-5" />
+                                                                Sent!
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Mail className="w-5 h-5" />
+                                                                Send Email
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>

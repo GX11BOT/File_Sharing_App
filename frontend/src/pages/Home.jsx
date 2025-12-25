@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Upload, FileIcon, Image, FileText, Archive } from "lucide-react"
 import { useAuth } from "../context/AuthContext"
@@ -11,7 +11,14 @@ export default function Home() {
     const [uploadProgress, setUploadProgress] = useState(0)
     const [dragActive, setDragActive] = useState(false)
     const navigate = useNavigate()
-    const { authHeader } = useAuth()
+    const { authHeader, user } = useAuth()
+
+    // Check if user is authenticated
+    useEffect(() => {
+        if (!user) {
+            navigate("/login")
+        }
+    }, [user, navigate])
 
     const MAX_FILE_SIZE = 100 * 1024 * 1024
     const ALLOWED_TYPES = [
