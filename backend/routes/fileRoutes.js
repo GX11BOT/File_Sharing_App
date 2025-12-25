@@ -1,6 +1,5 @@
 const express = require("express")
 const multer = require("multer")
-const path = require("path")
 const {
     uploadFile,
     downloadFile,
@@ -12,11 +11,8 @@ const {
 const authMiddleware = require("../middleware/authMiddleware")
 const { optionalAuth } = require("../middleware/authMiddleware")
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, "uploads/"),
-    filename: (req, file, cb) =>
-        cb(null, Date.now() + path.extname(file.originalname)),
-})
+// Use memory storage for Cloudinary uploads
+const storage = multer.memoryStorage()
 
 const upload = multer({
     storage,
