@@ -119,7 +119,8 @@ export default function Home() {
                     reject({ message: "Network error occurred" })
             })
 
-            xhr.open("POST", "/api/file/upload")
+            const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000"
+            xhr.open("POST", `${apiUrl}/api/file/upload`)
 
             // Add auth header
             if (authHeader.Authorization) {

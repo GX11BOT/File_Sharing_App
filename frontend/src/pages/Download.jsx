@@ -31,7 +31,8 @@ export default function DownloadComponent() {
     useEffect(() => {
         const fetchFileInfo = async () => {
             try {
-                const response = await fetch(`/api/file/info/${fileId}`)
+                const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000"
+                const response = await fetch(`${apiUrl}/api/file/info/${fileId}`)
                 if (!response.ok) throw new Error("File not found or expired")
                 const data = await response.json()
                 setFileInfo(data)
@@ -63,7 +64,8 @@ export default function DownloadComponent() {
 
     const handleDownload = async () => {
         try {
-            const response = await fetch(`/api/file/download/${fileId}`)
+            const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000"
+            const response = await fetch(`${apiUrl}/api/file/download/${fileId}`)
             if (!response.ok) throw new Error("Download failed")
 
             const blob = await response.blob()

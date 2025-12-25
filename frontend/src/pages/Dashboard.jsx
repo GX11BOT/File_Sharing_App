@@ -40,7 +40,8 @@ export default function Dashboard() {
 
     const fetchFiles = useCallback(async () => {
         try {
-            const response = await fetch("/api/file/my-files", {
+            const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000"
+            const response = await fetch(`${apiUrl}/api/file/my-files`, {
                 headers: {
                     ...authHeader,
                 },
@@ -65,7 +66,8 @@ export default function Dashboard() {
         if (!confirm("Are you sure you want to delete this file?")) return
 
         try {
-            const response = await fetch(`/api/file/${fileId}`, {
+            const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000"
+            const response = await fetch(`${apiUrl}/api/file/${fileId}`, {
                 method: "DELETE",
                 headers: {
                     ...authHeader,
