@@ -16,6 +16,13 @@ app.use(cors())
 app.use(express.json())
 app.use("/uploads", express.static("uploads"))
 
+// Redirect legacy direct-download links to frontend download page
+app.get('/download/:fileId', (req, res) => {
+    const { fileId } = req.params
+    const frontend = process.env.FRONTEND_BASE_URL || process.env.BASE_URL || `http://localhost:5173`
+    return res.redirect(`${frontend.replace(/\/$/, '')}/download/${fileId}`)
+})
+
 app.use("/api/user", userRouter)
 app.use("/api/file", fileRouter)
 
